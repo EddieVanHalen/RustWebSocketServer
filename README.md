@@ -22,7 +22,7 @@ Welcome to **EchoNet**, a cutting-edge real-time messaging server built in **Rus
 ### Clone the Repository
 
 ```bash
-git clone https://github.com/yourusername/EchoNet.git
+git clone https://github.com/EddieVanHalen/EchoNet.git
 cd EchoNet
 ```
 
