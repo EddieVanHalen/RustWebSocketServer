@@ -6,7 +6,7 @@ use tokio::{net::TcpListener, sync::Notify};
 use crate::{start_p2p_node::accept_connection, Peers};
 
 pub async fn start_server(addr: SocketAddr, peers: Peers, notify: Arc<Notify>) {
-    let listener = TcpListener::bind(&addr).await.expect("failder to bind");
+    let listener = TcpListener::bind(&addr).await.expect("failed to bind");
 
     info!("Listening on: {}", addr);
 

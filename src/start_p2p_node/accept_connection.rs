@@ -38,30 +38,42 @@ pub async fn accept_connection(stream: TcpStream, peers: Peers) {
         receiver_address: ip_address,
     });
 
+    // adding peer to peers list
     {
         let mut peers_lock = peers.lock().await;
         peers_lock.push(new_peer.clone());
         info!("New connection added. Total peers: {}", peers_lock.len());
     }
 
+    // receiving message
     while let Some(msg) = receiver_wrap.lock().await.next().await {
         match msg {
             Ok(Message::Text(text)) => {
-                info!("Received from client: {}", text);
+                info!("Received from client {}", text);
+
+                if text.trim().to_lowercase() == "close" {
+                    let mut peers_lock = peers.lock().await;
+                    peers_lock.retain(|p| p.uuid != sender_uuid);
+                    info!("Peer removed: {:?}", &sender_uuid);
+                    info!("Connection removed. Total peers: {}", peers_lock.len());
+                    break;
+                }
 
                 // blocking mutex for sending messages
                 let mut peers_lock = peers.lock().await;
 
+                // broadcast
                 for v in peers_lock.iter_mut() {
                     if sender_uuid == v.uuid {
                         continue;
                     }
 
-                    if let Err(e) = sender_wrap
-                        .lock()
-                        .await
-                        .send(Message::Text(text.clone()))
-                        .await
+                    let message = text.clone();
+
+                    println!("message = {}", &message);
+
+                    //sending messages
+                    if let Err(e) = v.sender.lock().await.send(Message::Text(message)).await
                     {
                         eprintln!("Error sending message: {}", e);
                     }

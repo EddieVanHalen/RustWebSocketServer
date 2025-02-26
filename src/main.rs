@@ -20,7 +20,7 @@ async fn main() {
         panic!("Invalid address: {}. Error: {}", "127.0.0.1:8080", e);
     });
 
-    let peers: Arc<Mutex<Vec<Arc<Peer>>>> = Arc::new(Mutex::new(Vec::new()));
+    let peers: Peers = Arc::new(Mutex::new(Vec::new()));
 
     start_p2p_node::start(addr, peers.clone()).await;
 }   

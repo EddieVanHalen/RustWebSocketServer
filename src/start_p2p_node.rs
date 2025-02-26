@@ -3,7 +3,6 @@ use std::{
     sync::Arc,
 };
 use tokio::sync::Notify;
-
 use crate::Peers;
 
 mod accept_connection;
