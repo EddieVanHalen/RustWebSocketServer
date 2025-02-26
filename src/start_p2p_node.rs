@@ -28,5 +28,5 @@ pub async fn start(addr: SocketAddr, peers: Peers) {
 
     println!("Server Started Working har");
 
-    start_client("ws://127.0.0.1:8080", peers.clone()).await;
+    start_client("ws://127.0.0.1:8080").await;
 }
