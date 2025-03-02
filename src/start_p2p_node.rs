@@ -1,31 +1,27 @@
 use std::net::SocketAddr;
-use std::sync::Arc;
-
 use crate::Peers;
-
-mod start_client;
-mod start_server;
-
 use log::debug;
+use process_listener::process_listener;
 use start_client::start_client;
 use start_server::start_server;
 
-use tokio::sync::Notify;
+mod process_listener;
+mod start_client;
+mod start_server;
 
-pub async fn start_p2p_node(addr: SocketAddr, peers: Peers) {
-    let notify = Arc::new(Notify::new());
-
-    let notify_clone = notify.clone();
-
+pub async fn start_p2p_node(addr: SocketAddr, mode: &str, peers: Peers) {
     let peers_clone = peers.clone();
 
-    tokio::spawn(async move {
-        start_server(addr, peers_clone, notify_clone).await;
-    });
+    match mode {
+        "server" => {
+            tokio::spawn(async move {
+                start_server(addr, peers_clone).await;
+            });
+            debug!("Server Started");
 
-    notify.notified().await;
+            process_listener().await;
+        }
 
-    debug!("Server Started");
-
-    start_client(&addr.to_string()).await;
+        _ => return,
+    }
 }

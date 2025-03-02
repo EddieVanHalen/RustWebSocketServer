@@ -1,15 +1,13 @@
-use std::sync::Arc;
-
 use futures_util::StreamExt;
-use log::{error, info};
-use tokio::{
-    net::TcpStream,
-    sync::{Mutex, Notify},
-};
+use std::sync::Arc;
 use tokio_tungstenite::accept_async;
 use uuid::Uuid;
-
+use log::{error, info};
 use crate::{Peers, Sender, peer::Peer};
+use tokio::{
+    net::TcpStream,
+    sync::Mutex,
+};
 
 mod message_receiver;
 mod remove_peer;
@@ -21,6 +19,7 @@ use remove_peer::remove_peer;
 pub async fn accept_connection(stream: TcpStream, peers: &mut Peers) {
     info!("Handling Connection In accept_connection");
 
+    //getting WebSocket stream
     let ws_stream = match accept_async(stream).await {
         Ok(ws) => {
             info!("WebSocket handshake successful");
@@ -58,17 +57,12 @@ pub async fn accept_connection(stream: TcpStream, peers: &mut Peers) {
     let sender_uuid_clone = sender_uuid.clone();
     let peers_clone_arc = Arc::new(Mutex::new(peers.clone()));
 
-    let notify = Arc::new(Notify::new());
-
-    let notify_clone = notify.clone();
-
     // starting message receiver
     tokio::spawn(async move {
         message_receiver(
             new_peer_wrap_clone,
             peers_clone_arc,
             sender_uuid_clone,
-            notify_clone,
         )
         .await;
     });

@@ -707,6 +707,7 @@ dependencies = [
  "env_logger",
  "futures-util",
  "log",
+ "regex",
  "tokio",
  "tokio-tungstenite",
  "uuid",

@@ -4,10 +4,10 @@ use log::{debug, error, info};
 use tokio::net::TcpStream;
 use tokio_tungstenite::tungstenite::{Message, Utf8Bytes};
 use tokio_tungstenite::{MaybeTlsStream, WebSocketStream, connect_async};
+use handle_input::*;
 
 mod handle_input;
 
-use handle_input::*;
 
 async fn send_me_peers(
     sender: &mut SplitSink<WebSocketStream<MaybeTlsStream<TcpStream>>, Message>,
@@ -17,8 +17,8 @@ async fn send_me_peers(
     debug!("{:#?}", result);
 }
 
-pub async fn start_client(addr: &str) {
-    info!("----------------------------------------------- {addr}");
+pub async fn start_client(addr: String) {
+    info!("connecting to {addr}");
 
     let connection_ip = format!("ws://{}", addr);
 

@@ -1,5 +1,4 @@
-use std::net::SocketAddr;
-
+use std::{env, net::SocketAddr};
 use futures_util::stream::{SplitSink, SplitStream};
 use peer::Peer;
 use start_p2p_node::start_p2p_node;
@@ -17,11 +16,16 @@ pub type Receiver = SplitStream<WebSocketStream<TcpStream>>;
 async fn main() {
     env_logger::init();
 
-    let addr: SocketAddr = "192.168.1.71:8080".parse().unwrap_or_else(|e| {
+    let variables: Vec<String> = env::args().collect();
+
+    let mode = &variables[1];
+    let host_ip = &variables[2];
+
+    let addr: SocketAddr = host_ip.parse().unwrap_or_else(|e| {
         panic!("Invalid address: {}. Error: {}", "localhost:8080", e);
     });
 
     let peers: Peers = Vec::new();
 
-    start_p2p_node(addr, peers).await;
+    start_p2p_node(addr, mode, peers).await;
 }
