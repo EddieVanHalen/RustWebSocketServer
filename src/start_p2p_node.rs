@@ -3,9 +3,11 @@ use std::sync::Arc;
 
 use crate::Peers;
 
+mod start_client;
 mod start_server;
 
 use log::debug;
+use start_client::start_client;
 use start_server::start_server;
 
 use tokio::sync::Notify;
@@ -25,5 +27,5 @@ pub async fn start_p2p_node(addr: SocketAddr, peers: Peers) {
 
     debug!("Server Started");
 
-    loop {}
+    start_client(&addr.to_string()).await;
 }
