@@ -22,7 +22,7 @@ async fn main() {
     let host_ip = &variables[2];
 
     let addr: SocketAddr = host_ip.parse().unwrap_or_else(|e| {
-        panic!("Invalid address: {}. Error: {}", "localhost:8080", e);
+        panic!("Invalid address: {}. Error: {}", host_ip, e);
     });
 
     let peers: Peers = Vec::new();
