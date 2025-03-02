@@ -26,6 +26,8 @@ pub async fn handle_input(
                     let _ = sender.close().await;
                 }
 
+                // let _ = sender.send(Message::Text(Utf8Bytes::from("ips"))).await;
+
                 let _ = sender.send(Message::Text(Utf8Bytes::from(message))).await;
             }
             Err(e) => {

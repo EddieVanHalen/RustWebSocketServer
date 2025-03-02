@@ -1,18 +1,21 @@
 use std::sync::Arc;
 
-use futures_util::{SinkExt, StreamExt};
+use futures_util::StreamExt;
 use log::{error, info};
-use tokio::{net::TcpStream, sync::Mutex};
-use tokio_tungstenite::{
-    accept_async,
-    tungstenite::{Message, Utf8Bytes},
+use tokio::{
+    net::TcpStream,
+    sync::{Mutex, Notify},
 };
+use tokio_tungstenite::accept_async;
 use uuid::Uuid;
 
-use crate::{Peers, peer::Peer};
+use crate::{Peers, Sender, peer::Peer};
 
+mod message_receiver;
 mod remove_peer;
+mod send_peers;
 
+use message_receiver::message_receiver;
 use remove_peer::remove_peer;
 
 pub async fn accept_connection(stream: TcpStream, peers: &mut Peers) {
@@ -31,10 +34,13 @@ pub async fn accept_connection(stream: TcpStream, peers: &mut Peers) {
     };
 
     let ip_address = ws_stream.get_ref().peer_addr().unwrap().ip().to_string();
+
+    // splitting one stream into two streams
     let (sender, receiver) = ws_stream.split();
 
+    //creating user and user's data
     let sender_uuid = Uuid::new_v4();
-    let sender_wrap = Arc::new(Mutex::new(sender));
+    let sender_wrap: Arc<Mutex<Sender>> = Arc::new(Mutex::new(sender));
     let receiver_wrap = Arc::new(Mutex::new(receiver));
 
     let new_peer = Peer {
@@ -45,44 +51,25 @@ pub async fn accept_connection(stream: TcpStream, peers: &mut Peers) {
     };
 
     //adding new peer to peers list
-    peers.push(new_peer);
+    peers.push(new_peer.clone());
 
-    while let Some(msg) = receiver_wrap.lock().await.next().await {
-        match msg {
-            Ok(Message::Text(text)) => {
-                info!("Received from client {}: {}", sender_uuid, text);
+    // making clones for sending in another thread
+    let new_peer_wrap_clone = Arc::new(new_peer.clone()).clone();
+    let sender_uuid_clone = sender_uuid.clone();
+    let peers_clone_arc = Arc::new(Mutex::new(peers.clone()));
 
-                if text.trim().eq_ignore_ascii_case("close") {
-                    remove_peer(peers, sender_uuid).await;
-                    break;
-                }
+    let notify = Arc::new(Notify::new());
 
-                for i in peers.iter() {
-                    if i.uuid == sender_uuid {
-                        continue;
-                    }
+    let notify_clone = notify.clone();
 
-                    let message = &text.to_string();
-
-                    let _ = i
-                        .sender
-                        .lock()
-                        .await
-                        .send(Message::Text(Utf8Bytes::from(message)))
-                        .await;
-                }
-            }
-            Ok(Message::Close(_)) => {
-                info!("Client {} closed the connection", sender_uuid);
-                remove_peer(peers, sender_uuid).await;
-                break;
-            }
-            Err(e) => {
-                error!("Connection error for {}: {}", sender_uuid, e);
-                remove_peer(peers, sender_uuid).await;
-                break;
-            }
-            _ => {}
-        }
-    }
+    // starting message receiver
+    tokio::spawn(async move {
+        message_receiver(
+            new_peer_wrap_clone,
+            peers_clone_arc,
+            sender_uuid_clone,
+            notify_clone,
+        )
+        .await;
+    });
 }
